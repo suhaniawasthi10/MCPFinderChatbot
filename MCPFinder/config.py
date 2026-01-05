@@ -13,8 +13,12 @@ class Settings:
     # CORS
     CORS_ORIGINS: str = os.environ.get('CORS_ORIGINS', '*')
     
-    # OpenAI
-    OPENAI_API_KEY: str = os.environ['OPENAI_API_KEY']
+    # Groq (fast inference)
+    GROQ_API_KEY: str = os.environ['xAI_KEY']
+    GROQ_API_BASE: str = "https://api.groq.com/openai/v1"
+    
+    # OpenAI (optional fallback)
+    OPENAI_API_KEY: str = os.environ.get('OPENAI_API_KEY', '')
     
     # SerpAPI
     SERPAPI_KEY: str = os.environ['SERPAPI_KEY']

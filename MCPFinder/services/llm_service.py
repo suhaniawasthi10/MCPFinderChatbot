@@ -111,10 +111,12 @@ def search_web(query: str) -> str:
 
 class LLMService:
     def __init__(self):
+        # Using Groq API (OpenAI-compatible, fast inference)
         self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="llama-3.3-70b-versatile",  # Groq's best model for tool calling
             temperature=0.7,
-            openai_api_key=settings.OPENAI_API_KEY,
+            openai_api_key=settings.GROQ_API_KEY,
+            openai_api_base=settings.GROQ_API_BASE,
             streaming=True
         )
         
