@@ -54,5 +54,24 @@ class ConversationController:
         for msg in messages:
             if isinstance(msg['timestamp'], str):
                 msg['timestamp'] = datetime.fromisoformat(msg['timestamp'])
-        
+
         return messages
+
+    @staticmethod
+    async def delete_conversation(conversation_id: str, current_user: User, db):
+        # Verify conversation belongs to user
+        conversation = await db.conversations.find_one(
+            {"id": conversation_id, "user_id": current_user.id},
+            {"_id": 0}
+        )
+
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Delete all messages in the conversation
+        await db.messages.delete_many({"conversation_id": conversation_id})
+
+        # Delete the conversation
+        await db.conversations.delete_one({"id": conversation_id, "user_id": current_user.id})
+
+        return {"message": "Conversation deleted successfully"}

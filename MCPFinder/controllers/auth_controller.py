@@ -1,53 +1,59 @@
-from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests
 from fastapi import HTTPException
 from datetime import datetime
 from models.user import User
-from models.auth import GoogleAuthRequest, AuthResponse
+from models.auth import SignupRequest, LoginRequest, AuthResponse
 from utils.jwt_handler import create_access_token
-from config import settings
+import bcrypt
 
 class AuthController:
     @staticmethod
-    async def google_login(auth_request: GoogleAuthRequest, db) -> AuthResponse:
-        try:
-            # Verify the Google token
-            idinfo = google_id_token.verify_oauth2_token(
-                auth_request.token,
-                google_requests.Request(),
-                settings.GOOGLE_CLIENT_ID
-            )
-            
-            google_id = idinfo['sub']
-            email = idinfo['email']
-            name = idinfo.get('name', email)
-            picture = idinfo.get('picture')
-            
-            # Check if user exists
-            user_doc = await db.users.find_one({"google_id": google_id}, {"_id": 0})
-            
-            if user_doc:
-                if isinstance(user_doc['created_at'], str):
-                    user_doc['created_at'] = datetime.fromisoformat(user_doc['created_at'])
-                user = User(**user_doc)
-            else:
-                # Create new user
-                user = User(
-                    google_id=google_id,
-                    email=email,
-                    name=name,
-                    picture=picture
-                )
-                user_dict = user.model_dump()
-                user_dict['created_at'] = user_dict['created_at'].isoformat()
-                await db.users.insert_one(user_dict)
-            
-            # Create access token
-            access_token = create_access_token({"user_id": user.id, "email": user.email})
-            
-            return AuthResponse(access_token=access_token, user=user)
-        
-        except ValueError as e:
-            raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
+    async def signup(request: SignupRequest, db) -> AuthResponse:
+        # Check if username already taken
+        existing = await db.users.find_one({"username": request.username}, {"_id": 0})
+        if existing:
+            raise HTTPException(status_code=400, detail="Username already taken")
+
+        # Hash password
+        password_hash = bcrypt.hashpw(request.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        # Create user
+        user = User(
+            username=request.username,
+            name=request.name,
+            password_hash=password_hash
+        )
+        user_dict = user.model_dump()
+        user_dict["password_hash"] = password_hash
+        user_dict["created_at"] = user_dict["created_at"].isoformat()
+        await db.users.insert_one(user_dict)
+
+        # Create token
+        access_token = create_access_token({"user_id": user.id, "username": user.username})
+
+        return AuthResponse(
+            access_token=access_token,
+            user={"id": user.id, "username": user.username, "name": user.name}
+        )
+
+    @staticmethod
+    async def login(request: LoginRequest, db) -> AuthResponse:
+        # Find user
+        user_doc = await db.users.find_one({"username": request.username}, {"_id": 0})
+        if not user_doc:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+
+        # Verify password
+        if not bcrypt.checkpw(request.password.encode("utf-8"), user_doc["password_hash"].encode("utf-8")):
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+
+        if isinstance(user_doc["created_at"], str):
+            user_doc["created_at"] = datetime.fromisoformat(user_doc["created_at"])
+
+        user = User(**user_doc)
+
+        access_token = create_access_token({"user_id": user.id, "username": user.username})
+
+        return AuthResponse(
+            access_token=access_token,
+            user={"id": user.id, "username": user.username, "name": user.name}
+        )

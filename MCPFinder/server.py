@@ -16,6 +16,11 @@ api_router = APIRouter(prefix="/api")
 async def root():
     return {"message": "MCP Server Finder API is running"}
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # Include all route modules
 api_router.include_router(auth_routes.router)
 api_router.include_router(conversation_routes.router)

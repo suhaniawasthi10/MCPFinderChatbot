@@ -31,3 +31,11 @@ async def get_conversation_messages(
     db = Depends(get_database)
 ):
     return await ConversationController.get_conversation_messages(conversation_id, current_user, db)
+
+@router.delete("/{conversation_id}")
+async def delete_conversation(
+    conversation_id: str,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_database)
+):
+    return await ConversationController.delete_conversation(conversation_id, current_user, db)

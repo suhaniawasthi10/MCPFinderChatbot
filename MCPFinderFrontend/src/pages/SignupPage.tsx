@@ -8,24 +8,37 @@ import { Input } from "../components/ui/input";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-interface LoginPageProps {
+interface SignupPageProps {
   onLogin: () => void;
 }
 
-const LoginPage = ({ onLogin }: LoginPageProps) => {
+const SignupPage = ({ onLogin }: SignupPageProps) => {
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) return;
+    if (!username.trim() || !name.trim() || !password.trim()) return;
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/auth/login`, {
+      const response = await axios.post(`${API}/auth/signup`, {
         username,
+        name,
         password,
       });
 
@@ -33,11 +46,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      toast.success(`Welcome back, ${user.name}!`);
+      toast.success(`Welcome, ${user.name}!`);
       onLogin();
       navigate("/chat");
     } catch (error: any) {
-      const detail = error.response?.data?.detail || "Login failed. Please try again.";
+      const detail = error.response?.data?.detail || "Signup failed. Please try again.";
       toast.error(detail);
     } finally {
       setLoading(false);
@@ -60,17 +73,30 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
                 />
               </svg>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Welcome Back
+              Create Account
             </h1>
-            <p className="text-gray-600">Sign in to continue</p>
+            <p className="text-gray-600">Start discovering MCP servers</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Name
+              </label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full rounded-xl px-4 py-3 border-gray-300/50 focus:border-purple-500 focus:ring-purple-500/20"
+                required
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Username
@@ -79,7 +105,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                placeholder="Choose a username"
                 className="w-full rounded-xl px-4 py-3 border-gray-300/50 focus:border-purple-500 focus:ring-purple-500/20"
                 required
               />
@@ -92,7 +118,20 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="At least 6 characters"
+                className="w-full rounded-xl px-4 py-3 border-gray-300/50 focus:border-purple-500 focus:ring-purple-500/20"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Confirm Password
+              </label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
                 className="w-full rounded-xl px-4 py-3 border-gray-300/50 focus:border-purple-500 focus:ring-purple-500/20"
                 required
               />
@@ -102,17 +141,17 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-gray-600 mt-6">
-            Don't have an account?{" "}
+            Already have an account?{" "}
             <Link
-              to="/signup"
+              to="/login"
               className="font-medium text-purple-600 hover:text-purple-700"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </div>
@@ -121,4 +160,4 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;

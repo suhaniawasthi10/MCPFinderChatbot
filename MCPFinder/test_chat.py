@@ -37,11 +37,16 @@ async def test_chat_functionality():
         print("-" * 30)
         
         response_chunks = []
-        async for chunk in llm_service.stream_chat_response(messages, user_message):
-            response_chunks.append(chunk)
-            print(chunk, end="", flush=True)
-        
-        print(f"\n\n✅ Complete response received ({len(response_chunks)} chunks)")
+        async for event in llm_service.get_chat_response_with_status(messages, user_message):
+            response_chunks.append(event)
+            if event["type"] == "tool_start":
+                print(f"🔧 Tool started: {event['tool']}")
+            elif event["type"] == "tool_end":
+                print(f"✅ Tool completed: {event['tool']}")
+            elif event["type"] == "response":
+                print(event["content"])
+
+        print(f"\n\n✅ Complete response received ({len(response_chunks)} events)")
         
         return True
         

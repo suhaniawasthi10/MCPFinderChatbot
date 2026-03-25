@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,7 @@ const API = `${BACKEND_URL}/api`;
 interface User {
   id: string;
   name: string;
-  email: string;
-  picture?: string;
+  username: string;
 }
 
 interface Message {
@@ -112,12 +111,8 @@ const ChatPage = ({ onLogout }: ChatPageProps) => {
 
   const getToolDisplayName = (toolName: string): string => {
     const toolMap: { [key: string]: string } = {
-      "tavily_search_results_json": "🔍 Searching the web",
-      "search": "🔍 Searching",
-      "mcp_search": "🔎 Searching MCP servers",
-      "web_search": "🌐 Browsing the web",
-      "calculator": "🧮 Calculating",
-      "database": "💾 Querying database",
+      "search_mcp_servers": "🔎 Searching MCP servers",
+      "search_web": "🌐 Browsing the web",
     };
     return toolMap[toolName] || `🔧 Using ${toolName}`;
   };
@@ -365,7 +360,6 @@ const ChatPage = ({ onLogout }: ChatPageProps) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10 ring-2 ring-purple-100">
-                    <AvatarImage src={user?.picture} />
                     <AvatarFallback className="bg-gradient-to-br from-purple-400 to-blue-400 text-white">
                       {user?.name?.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
@@ -375,7 +369,7 @@ const ChatPage = ({ onLogout }: ChatPageProps) => {
                       {user?.name}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
+                      @{user?.username}
                     </p>
                   </div>
                 </div>

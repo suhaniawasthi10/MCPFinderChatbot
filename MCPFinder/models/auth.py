@@ -1,13 +1,18 @@
 from pydantic import BaseModel
 from typing import Optional
-from models.user import User
 
-class GoogleAuthRequest(BaseModel):
-    token: str
+class SignupRequest(BaseModel):
+    username: str
+    name: str
+    password: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 class AuthResponse(BaseModel):
     access_token: str
-    user: User
+    user: dict
 
 class ChatRequest(BaseModel):
     message: str

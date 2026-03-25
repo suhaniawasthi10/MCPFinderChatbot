@@ -35,7 +35,7 @@ async def test_mcp_search_tool():
         print("-" * 30)
         
         try:
-            result = search_mcp_servers(query)
+            result = search_mcp_servers.invoke({"query": query})
             print(f"✅ Result:\n{result}")
         except Exception as e:
             print(f"❌ Error: {str(e)}")
@@ -48,7 +48,7 @@ async def test_web_search_tool():
     print("=" * 50)
     
     try:
-        result = search_web("MCP Model Context Protocol")
+        result = search_web.invoke({"query": "MCP Model Context Protocol"})
         print(f"✅ Web search result:\n{result}")
     except Exception as e:
         print(f"❌ Web search error: {str(e)}")
@@ -70,11 +70,16 @@ async def test_llm_service():
         print("-" * 30)
         
         response_chunks = []
-        async for chunk in llm_service.stream_chat_response(messages, user_message):
-            response_chunks.append(chunk)
-            print(chunk, end="", flush=True)
-        
-        print(f"\n\n✅ Complete response received ({len(response_chunks)} chunks)")
+        async for event in llm_service.get_chat_response_with_status(messages, user_message):
+            response_chunks.append(event)
+            if event["type"] == "tool_start":
+                print(f"🔧 Tool started: {event['tool']}")
+            elif event["type"] == "tool_end":
+                print(f"✅ Tool completed: {event['tool']}")
+            elif event["type"] == "response":
+                print(event["content"])
+
+        print(f"\n\n✅ Complete response received ({len(response_chunks)} events)")
         
     except Exception as e:
         print(f"❌ LLM Service error: {str(e)}")
@@ -85,7 +90,7 @@ def check_environment():
     print("=" * 50)
     
     required_vars = [
-        'OPENAI_API_KEY',
+        'GROQ_API_KEY',
         'SERPAPI_KEY',
         'MONGO_URL',
         'DB_NAME',
